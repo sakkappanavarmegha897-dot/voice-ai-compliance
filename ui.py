@@ -32,7 +32,7 @@ col1, col2 = st.columns(2)
 with col1:
     st.subheader("🎙️ Input Audio/Text Streaming Emulator")
     
-    # --- ADDED: MIC SPEECH-TO-TEXT BUTTON ---
+    # --- MIC SPEECH-TO-TEXT BUTTON ---
     spoken_text = speech_to_text(
         language='en',
         start_prompt="🎙️ Speak Query",
@@ -46,7 +46,7 @@ with col1:
         st.session_state["query_input"] = spoken_text
         st.success(f"Captured Speech: \"{spoken_text}\"")
 
-    # Original text input area (now receives voice transcription automatically)
+    # Original text input area
     user_query = st.text_area(
         "Enter raw transcript payload to stream over WebSocket:",
         value=st.session_state.get("query_input", ""),
@@ -62,8 +62,8 @@ with col2:
     if run_btn and user_query:
         async def send_to_agent():
             try:
-                # Explicitly dial local IP mapping loopback
-                async with websockets.connect("wss://voice-ai-backend-mii4.onrender.com") as ws:
+                # Updated to match your live Render backend URL: voice-ai-backend-app
+                async with websockets.connect("wss://voice-ai-backend-app.onrender.com") as ws:
                     payload = {"session_id": "web_ui_session_101", "text_query": user_query}
                     await ws.send(json.dumps(payload))
                     
@@ -80,15 +80,16 @@ with col2:
             st.error(result["error"])
         else:
             # Main Evaluation Status Callout
-            if result["compliance_verified"]:
+            if result.get("compliance_verified", False):
                 st.success("✅ COMPLIANCE VERIFIED: Clean Execution Status")
             else:
                 st.error("🚨 VIOLATION DETECTED: Execution Intercepted")
                 
             # Metric Callout Cards
+            metrics = result.get("metrics", {})
             m_col1, m_col2 = st.columns(2)
-            m_col1.metric("Processing Latency", f"{result['metrics']['total_latency_ms']} ms")
-            m_col2.metric("Pipeline State", result["pipeline_state"])
+            m_col1.metric("Processing Latency", f"{metrics.get('total_latency_ms', 0)} ms")
+            m_col2.metric("Pipeline State", result.get("pipeline_state", "N/A"))
             
             # Show the raw JSON execution logs for architectural proof
             st.markdown("**Structured State Engine Output Payload:**")
@@ -103,12 +104,12 @@ with col2:
             edge_col1, edge_col2 = st.columns(2)
             
             # Show latency compared to the strict 2.5-second constraint
-            latency_ms = result['metrics']['total_latency_ms']
+            latency_ms = metrics.get('total_latency_ms', 0)
             delta_latency = latency_ms - 2500
             edge_col1.metric(
                 label="Total Graph Latency vs Max Target Limit (2500ms)",
                 value=f"{latency_ms} ms",
-                delta=f"{delta_latency} ms below ceiling",
+                delta=f"{delta_latency} ms relative to ceiling",
                 delta_color="normal"
             )
             
