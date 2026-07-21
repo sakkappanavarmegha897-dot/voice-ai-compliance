@@ -63,7 +63,8 @@ with col2:
         async def send_to_agent():
             try:
                 # Updated to match your live Render backend URL: voice-ai-backend-app
-                async with websockets.connect("wss://voice-ai-backend-app.onrender.com") as ws:
+                # Update with the exact URL shown on your Render dashboard:
+                async with websockets.connect("wss://voice-ai-backend-app-9zqv.onrender.com") as ws:
                     payload = {"session_id": "web_ui_session_101", "text_query": user_query}
                     await ws.send(json.dumps(payload))
                     
