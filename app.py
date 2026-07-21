@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 import re
 import time
 from typing import Dict, TypedDict
@@ -142,8 +143,17 @@ async def handle_stream_connection(websocket):
             await websocket.send(json.dumps({"error": "Invalid enterprise transmission frame payload."}))
 
 async def main():
-    async with websockets.serve(handle_stream_connection, "127.0.0.1", 8765):
-        print("🚀 Production Agent Active & Compiling Graph Engine on ws://127.0.0.1:8765")
+    # Read assigned port from Render environment, defaulting to 10000
+    port = int(os.environ.get("PORT", 10000))
+    
+    # Bind to 0.0.0.0 and set origins=None to allow cross-origin WebSocket requests
+    async with websockets.serve(
+        handle_stream_connection, 
+        "0.0.0.0", 
+        port, 
+        origins=None
+    ):
+        print(f"🚀 Production Agent Active & Compiling Graph Engine on port {port}")
         await asyncio.Future()
 
 if __name__ == "__main__":
