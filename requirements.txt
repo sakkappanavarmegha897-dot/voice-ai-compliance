@@ -1,0 +1,6 @@
+streamlit
+websockets
+langgraph
+langchain-core
+streamlit-mic-recorder
+typing-extensions
