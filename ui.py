@@ -42,21 +42,21 @@ st.markdown("""
     .status-badge-green {
         background-color: #0E3A2F;
         color: #4E8;
-        padding: 6px 14px;
+        padding: 8px 16px;
         border-radius: 20px;
         border: 1px solid #10B981;
         font-weight: 600;
-        font-size: 14px;
+        font-size: 15px;
         display: inline-block;
     }
     .status-badge-red {
         background-color: #3D141A;
         color: #FF6B6B;
-        padding: 6px 14px;
+        padding: 8px 16px;
         border-radius: 20px;
         border: 1px solid #EF4444;
         font-weight: 600;
-        font-size: 14px;
+        font-size: 15px;
         display: inline-block;
     }
 </style>
@@ -75,7 +75,7 @@ st.markdown("---")
 # 🎯 SIDEBAR: PRESETS & AUDIT LOGS
 # ==========================================
 with st.sidebar:
-    st.image("https://img.icons8.com/color/96/000000/shield-with-signature.png", width=60)
+    st.markdown("# 🛡️") # Clean emoji header replacing external image
     st.title("Control Panel")
     
     st.markdown("### 🎯 Quick Demo Presets")
