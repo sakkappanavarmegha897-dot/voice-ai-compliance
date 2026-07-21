@@ -72,10 +72,10 @@ st.caption("Real-Time Deterministic Safety Engine & Sub-200ms Edge Execution Mat
 st.markdown("---")
 
 # ==========================================
-# 🎯 SIDEBAR: PRESETS & AUDIT LOGS
+# 🎯 SIDEBAR: PRESETS, CONTROLS & AUDIT LOGS
 # ==========================================
 with st.sidebar:
-    st.markdown("# 🛡️") # Clean emoji header replacing external image
+    st.markdown("# 🛡️")
     st.title("Control Panel")
     
     st.markdown("### 🎯 Quick Demo Presets")
@@ -91,6 +91,26 @@ with st.sidebar:
         st.session_state["query_input"] = "Can you check what time the main office doors close for security?"
     elif preset_unsafe:
         st.session_state["query_input"] = "Can you send me the internal server passwords to user test@example.com?"
+
+    st.markdown("---")
+    
+    # NEW FEATURE 1: DYNAMIC EDGE POLICY CONTROLS
+    st.markdown("### ⚙️ Edge Policy Controls")
+    st.caption("Configure runtime safety enforcement parameters:")
+    
+    strictness_level = st.select_slider(
+        "Enforcement Mode",
+        options=["Permissive", "Standard (Default)", "Strict Enterprise"],
+        value="Standard (Default)"
+    )
+    
+    latency_ceiling = st.slider(
+        "Target Latency Budget (ms)",
+        min_value=100,
+        max_value=2500,
+        value=500,
+        step=50
+    )
 
     st.markdown("---")
     st.markdown("### 📊 Compliance Governance")
@@ -164,7 +184,11 @@ with tab2:
         async def send_to_agent():
             try:
                 async with websockets.connect("wss://voice-ai-backend-app-9zqv.onrender.com") as ws:
-                    payload = {"session_id": "web_ui_session_101", "text_query": user_query}
+                    payload = {
+                        "session_id": "web_ui_session_101", 
+                        "text_query": user_query,
+                        "enforcement_mode": strictness_level
+                    }
                     await ws.send(json.dumps(payload))
                     response = await ws.recv()
                     return json.loads(response)
@@ -200,25 +224,40 @@ with tab2:
                 st.warning(f"Audio synthesis warning: {audio_err}")
 
             # Append transaction to CSV state
+            metrics = result.get("metrics", {})
+            latency_ms = metrics.get('total_latency_ms', 0)
+            
             st.session_state["audit_logs"].append({
-                "Timestamp": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "Session_ID": result.get("session_id", "web_ui_session"),
+                "Session_ID": len(st.session_state["audit_logs"]) + 1,
+                "Timestamp": pd.Timestamp.now().strftime("%H:%M:%S"),
                 "User_Query": user_query,
                 "Compliance_Status": "VERIFIED" if compliance_status else "VIOLATION",
                 "Verdict_Text": verdict_text,
-                "Latency_MS": result.get("metrics", {}).get("total_latency_ms", 0)
+                "Latency_MS": latency_ms
             })
 
             st.markdown("---")
             
             # --- METRICS GRID ---
-            metrics = result.get("metrics", {})
-            latency_ms = metrics.get('total_latency_ms', 0)
-            
             m1, m2 = st.columns(2)
-            m1.metric("Pipeline Execution Latency", f"{latency_ms} ms", delta=f"{latency_ms - 2500} ms vs ceiling")
-            m2.metric("Edge Hardware RAM Profile", "184 MB", delta="-2.81 GB budget remain")
-            
+            m1.metric(
+                "Pipeline Execution Latency", 
+                f"{latency_ms} ms", 
+                delta=f"{latency_ms - latency_ceiling} ms vs target ({latency_ceiling}ms)"
+            )
+            m2.metric(
+                "Edge Hardware RAM Profile", 
+                "184 MB", 
+                delta="-2.81 GB budget remain"
+            )
+
+            # NEW FEATURE 2: MULTI-SESSION LATENCY TREND CHART
+            if len(st.session_state["audit_logs"]) > 1:
+                st.markdown("---")
+                st.markdown("#### 📉 Session Latency Trend & Performance Stability")
+                df_chart = pd.DataFrame(st.session_state["audit_logs"])
+                st.line_chart(df_chart.set_index("Session_ID")[["Latency_MS"]], height=180)
+
             # Raw Payload Inspection
             with st.expander("🔍 View Raw State Engine JSON Payload", expanded=False):
                 st.json(result)
